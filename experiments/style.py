@@ -34,6 +34,6 @@ plt.rcParams.update({
 
 
 def save(fig, name: str):
-    fig.savefig(FIG / f"{name}.pdf")
+    fig.savefig(FIG / f"{name}.pdf", metadata={"CreationDate": None, "ModDate": None})  # PDF reproducible bit a bit
     fig.savefig(FIG / f"{name}.png", dpi=200)
     plt.close(fig)
