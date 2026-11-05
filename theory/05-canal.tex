@@ -1,0 +1,152 @@
+% theory/05-canal.tex — T34: Part 5, progressive transmission over noisy channels (Option A)
+% Project SemComV1 · feature 002-tcom · 2026-10-27
+% Notation: theory/00-modelo.tex and Part 3. Checks: check_t34.py.
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{observation}{Observation}
+
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\Q}{\mathcal{Q}}
+\newcommand{\E}{\mathbb{E}}
+
+\title{Path Codes on Shared Knowledge Graphs\\[2pt]\large Part 5: Progressive Transmission over Noisy Channels}
+\author{R.~Sandoval Ar\'echiga et al.\ (working notes)}
+\date{October 27, 2026 --- v0.1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+On a hierarchy, the first decisions of a path code name a coarse class of the meaning. If each level is protected by its own channel code and the receiver stops at the first block that fails, a channel failure costs resolution instead of producing a wrong meaning. We give the expected semantic distortion of this scheme exactly (Theorem~\ref{thm:ed}), show that the best split of a fixed channel budget among the levels is found exactly by dynamic programming (Proposition~\ref{prop:dp}), and identify what progressivity costs in rate: identifying classes exactly costs $H(C_j)-R(\bar d_j)$ bits at level~$j$, which is zero at the first and last levels and strictly positive at every non-trivial intermediate level, because no deterministic test channel is optimal (Lemma~\ref{lem:det}, Proposition~\ref{prop:cost}). Against separate source and channel coding, layering gains nothing when the channel is known and the blocks are long. It gains when the transmitter does not know the channel: coarse levels survive below the design signal-to-noise ratio, at a price in channel uses that we compute (Proposition~\ref{prop:sep}). Numerically, giving more protection to coarser levels is optimal in only some cases, so it is a heuristic and not a law.
+\end{abstract}
+
+\section{Setting}
+
+Meanings $M\in\M$ have law $P_M$ and distortion $d$ on a concept graph (Part~3). A \emph{hierarchy of height $h$} is a chain of partitions $\Q_0\sqsupseteq\Q_1\sqsupseteq\dots\sqsupseteq\Q_h$ of $\M$, with $\Q_0=\{\M\}$ and $\Q_h$ the partition into singletons; $C_j=c_j(M)$ is the class of $M$ in $\Q_j$. The best estimate of $M$ from $C_j$ has expected distortion
+\[
+\bar d_j=\E\Big[\min_{\hat m\in\M}\E\big[d(M,\hat m)\mid C_j\big]\Big]=\sum_{B\in\Q_j}\min_{b}\sum_{m\in B}P_M(m)\,d(m,b),
+\]
+the distortion $D_{\Q_j}$ of the quotient code of $\Q_j$ when representatives may lie anywhere (Part~3 restricts $b\in B$; the two coincide for the ultrametric of a tree, where the best representative of a class lies in it). Since $\Q_{j}$ refines $\Q_{j-1}$, $\bar d_0\ge\bar d_1\ge\dots\ge\bar d_h=0$.
+
+By Corollary~3 of Part~3, an adapted path code that selects root-to-leaf branches of the hierarchy identifies $C_j$ with its first $j$ decisions. We call the description of $C_j$ given $C_{j-1}$ the \emph{level-$j$ block}.
+
+\begin{definition}[Layered transmission]\label{def:layered}
+Level $j$ is described with $k_j$ source bits and protected by its own channel code of $n_j$ uses of a memoryless channel $W$, with $\sum_jn_j=n$. The receiver decodes the blocks in order and stops at the first block it declares failed. Let $\varepsilon_j$ be the probability that block~$j$ fails and $J$ the index of the first failed block ($J=h+1$ if none fails). The receiver outputs the best estimate of $M$ given $C_{J-1}$.
+\end{definition}
+
+The assumptions are: (L1) the channel noise is independent of the source and of the other blocks, which holds when the blocks use disjoint channel uses of a memoryless channel; (L2) failures are detected, as on an erasure channel or with an error-detecting code (Remark~\ref{rem:undetected} removes this assumption at a stated cost).
+
+\section{Expected semantic distortion}
+
+\begin{theorem}[Expected distortion of layered transmission]\label{thm:ed}
+Under (L1)--(L2),
+\begin{equation}\label{eq:ed}
+\E[d(M,\hat M)]=\sum_{j=0}^{h}\Pr[J=j+1]\,\bar d_j,\qquad \Pr[J=j+1]=\varepsilon_{j+1}\prod_{i=1}^{j}(1-\varepsilon_i),
+\end{equation}
+with $\varepsilon_{h+1}:=1$.
+\end{theorem}
+
+\begin{proof}
+By (L2) every block accepted before $J$ is correct, so on $\{J=j+1\}$ the receiver knows $C_j$. By (L1) the event $\{J=j+1\}$ is independent of $M$, so the conditional law of $M$ given $C_j$ and $\{J=j+1\}$ is the law given $C_j$, and the best estimate has expected distortion $\bar d_j$. The probability of $\{J=j+1\}$ is the product of the success probabilities of blocks $1,\dots,j$ and the failure probability of block $j+1$, again by (L1). Summing over $j$ gives \eqref{eq:ed}.
+\end{proof}
+
+\begin{remark}[What the theorem compares]\label{rem:baselines}
+(a) \emph{Index code with uniform protection.} All $k=\sum_jk_j$ bits in one block of $n$ uses fails with probability $\varepsilon_U$; with detection, the receiver falls back to the global estimate, so $\E[d]=\varepsilon_U\,\bar d_0$. Without detection a failure yields an arbitrary meaning. (b) \emph{Embedded index code.} A code designed level by level on a chain of partitions obeys \eqref{eq:ed} with that chain's $\bar d_j$. On a tree the path code \emph{is} such a code, with the chain of ancestors; what the graph supplies is the chain itself, without design, and, on graphs with synonymy, a chain whenever the Viterbi selection forms a tree (Part~1). Any advantage of the path code must therefore come from the chain, never from the layering: this is the comparison that Section~\ref{sec:cost} quantifies. (c) The sequential decoder ignores blocks after the first failure. A decoder that uses them can only do better, so \eqref{eq:ed} is achievable and is an upper bound on the optimal decoder for the same codes.
+\end{remark}
+
+\begin{remark}[Undetected errors]\label{rem:undetected}
+If block $j$ is accepted in error with probability $\eta_j$, the receiver may output a wrong class. Each such event costs at most $d_{\max}=\max_{m,\hat m}d(m,\hat m)$, so the expected distortion is at most \eqref{eq:ed} plus $d_{\max}\sum_j\eta_j$. A cyclic redundancy check of $c$ bits on a block makes $\eta_j$ of order $2^{-c}$ for long blocks; Section~VIII of the manuscript reports the value measured with the practical code.
+\end{remark}
+
+\section{Allocation of a channel budget}
+
+\begin{proposition}[Exact allocation]\label{prop:dp}
+Let $\varepsilon(n_j,k_j)$ be any function, with $\varepsilon(0,k)=1$ for $k>0$. Define $V_{h+1}(r)=\bar d_h$ and, for $j=h,\dots,1$,
+\[
+V_j(r)=\min_{0\le n_j\le r}\Big[\varepsilon(n_j,k_j)\,\bar d_{j-1}+\big(1-\varepsilon(n_j,k_j)\big)\,V_{j+1}(r-n_j)\Big].
+\]
+Then $V_1(n)$ is the minimum of \eqref{eq:ed} over integer allocations with $\sum_jn_j=n$, the minimizers are recovered by backtracking, and the computation takes $O(hn^2)$ evaluations of $\varepsilon$.
+\end{proposition}
+
+\begin{proof}
+Write \eqref{eq:ed} as $\varepsilon_1\bar d_0+(1-\varepsilon_1)\big[\varepsilon_2\bar d_1+(1-\varepsilon_2)[\cdots]\big]$. The bracket after level $j$ depends only on $(n_{j+1},\dots,n_h)$, which must sum to $r-n_j$ when $r$ uses remain before level $j$. Since $1-\varepsilon_j\ge0$, minimizing the outer expression requires minimizing the bracket for each $n_j$; this is $V_{j+1}(r-n_j)$ by induction on $j$ from $h$ down to $1$. There are $h$ levels, $n+1$ values of $r$ and at most $n+1$ choices of $n_j$.
+\end{proof}
+
+\begin{observation}[Coarser levels do not always deserve more protection]\label{obs:mono}
+With the normal approximation of the block error probability on a binary symmetric channel, $\varepsilon(n,k)\approx Q\big((nC-k)/\sqrt{nV}\big)$~\cite{polyanskiy2010}, the optimal code rates $k_j/n_j$ were non-decreasing in $j$ (more protection for coarser levels) in only $26$ of $40$ random hierarchies (\texttt{check\_t34.py}, part~2). When a coarse level carries few bits and a finer level reduces distortion a lot, the program prefers to protect the finer level. The usual rule of unequal error protection is therefore a heuristic here; Proposition~\ref{prop:dp} replaces it.
+\end{observation}
+
+\section{What progressivity costs in rate}\label{sec:cost}
+
+Consider now long blocks of independent meanings, so that rates are per meaning and source coding is ideal. A progressive code (Definition~8 of the manuscript) must let a prefix determine $C_j$; its prefix rate is therefore at least $H(C_j)$. An unconstrained code that only needs distortion $\bar d_j$ at that point needs $R(\bar d_j)$.
+
+\begin{lemma}[Deterministic test channels are not optimal]\label{lem:det}
+Let $d(m,\hat m)<\infty$ for all $m,\hat m$, and let $0<D<D_{\max}$. No test channel that is a deterministic map $m\mapsto b(m)$ taking at least two values attains $R(D)$ at distortion $D$.
+\end{lemma}
+
+\begin{proof}
+Suppose such a map $b$ is optimal at $D$. Because $D<D_{\max}$, $R(D)>0$ and the distortion constraint is active; the problem is convex and $D>0$ makes it strictly feasible, so by Lagrangian duality there is $\beta>0$ such that the channel of $b$ minimizes $I(M;\hat M)+\beta\,\E\,d(M,\hat M)$ over all channels. Every minimizer of this Lagrangian has the form $W(\hat m\mid m)=q(\hat m)\,2^{-\beta d(m,\hat m)}/\sum_{\hat m'}q(\hat m')\,2^{-\beta d(m,\hat m')}$, where $q$ is its output law~\cite[Ch.~10]{cover2006}. The output law of $b$ puts positive mass on at least two values $b_1\neq b_2$. Take $m$ with $b(m)=b_1$: the deterministic channel gives $W(b_2\mid m)=0$, whereas the form above gives $W(b_2\mid m)>0$ because $q(b_2)>0$ and $d(m,b_2)<\infty$. This is a contradiction.
+\end{proof}
+
+\begin{proposition}[Cost of identifying classes]\label{prop:cost}
+Let $\Delta_j=H(C_j)-R(\bar d_j)$, and let $d(m,\hat m)>0$ for $m\neq\hat m$.
+(a) $\Delta_j\ge0$ for every $j$.
+(b) $\Delta_0=\Delta_h=0$.
+(c) The total rate of the layered description is $\sum_jH(C_j\mid C_{j-1})=H(M)$: progressivity costs nothing at the last level.
+(d) $\Delta_j>0$ for every level $\Q_j$ that is neither the trivial partition nor the partition into singletons.
+\end{proposition}
+
+\begin{proof}
+Let $\hat M=b(C_j)$ be the best representative of the class, which may be shared by several classes. (a) This deterministic test channel has distortion $\bar d_j$ and rate $H(\hat M)\le H(C_j)$, so $R(\bar d_j)\le H(C_j)$. (b) $H(C_0)=0=R(\bar d_0)$ because $\bar d_0=D_{\max}$; at $j=h$, $\bar d_h=0$ and $R(0)=H(M)=H(C_h)$ because $d$ is positive off the diagonal. (c) Chain rule, since $C_{j-1}$ is a function of $C_j$. (d) Since $\Q_j$ is not the partition into singletons, some class has two meanings, one of which is not its own representative, so $\bar d_j>0$. If $\bar d_j=D_{\max}$, then $R(\bar d_j)=0<H(C_j)$ because $\Q_j$ is not trivial. Otherwise $0<\bar d_j<D_{\max}$; then $\hat M$ takes at least two values (a single value $b$ would give distortion $\E\,d(M,b)\ge D_{\max}$), and Lemma~\ref{lem:det} gives $R(\bar d_j)<H(\hat M)\le H(C_j)$.
+\end{proof}
+
+Proposition~\ref{prop:cost}(d) strengthens Theorem~1(c) of Part~3 (and Theorem~4 of the manuscript), which exhibited one example of a strictly suboptimal quotient: \emph{every} non-trivial quotient code is strictly suboptimal. Numerically, \texttt{check\_t34.py} (part~3) finds $\Delta_j>0$ in all $18$ non-trivial levels of random height-two trees, between $0.0025$ and $0.409$ bits.
+
+\begin{remark}[The cost is in identifying classes, not in being progressive]
+If the Shannon-optimal test channels at the successive distortions form a Markov chain, the source is successively refinable~\cite{equitz1991} and a progressive \emph{lossy} code attains $R(\bar d_j)$ at every level. The loss $\Delta_j$ comes from requiring that a prefix identify a class exactly, which is what a path code delivers and what a receiver that must act on ``floor two'' needs. By Proposition~\ref{prop:cost}(d) this loss is strictly positive at every non-trivial level, even when the hierarchy is ultrametric and the source is successively refinable: it is the rate price of a semantic guarantee, not of progressivity.
+\end{remark}
+
+\section{Layering versus separation}
+
+Consider $B$ independent meanings, coded jointly at each level: level $j$ carries about $B\,H(C_j\mid C_{j-1})$ bits, losslessly given the classes already decoded, over $B\rho_j$ uses of the channel, so the total budget is $\rho=\sum_j\rho_j$ uses per meaning. A uniform scheme sends all $B\,H(M)$ bits in one block of $B\rho$ uses. Let $C(\gamma)$ be the capacity at signal-to-noise ratio $\gamma$, increasing in $\gamma$.
+
+\begin{proposition}[When layering helps]\label{prop:sep}
+Let $B\to\infty$ with $\rho_j$ fixed, and use channel codes that achieve capacity.
+(a) \emph{Known channel.} At a known $\gamma$, both schemes deliver every meaning exactly if and only if their channel budget is at least $H(M)/C(\gamma)$ per meaning; layering neither gains nor loses.
+(b) \emph{Unknown channel.} Choose target ratios $\gamma_{(1)}\le\dots\le\gamma_{(h)}$ and $\rho_j=H(C_j\mid C_{j-1})/C(\gamma_{(j)})$. At operating ratio $\gamma$ the layered scheme attains $\E[d]\to\bar d_{J(\gamma)}$ with $J(\gamma)=\max\{j:\gamma_{(i)}<\gamma\ \forall i\le j\}$, while the uniform scheme designed for $\gamma_{(h)}$ attains $\bar d_0$ for every $\gamma<\gamma_{(h)}$. The layered scheme uses $\sum_jH(C_j\mid C_{j-1})/C(\gamma_{(j)})\ge H(M)/C(\gamma_{(h)})$ channel uses per meaning, with equality if and only if all targets coincide.
+\end{proposition}
+
+\begin{proof}
+By the channel coding theorem, a block of rate below $C(\gamma)$ fails with probability tending to zero; by the strong converse, made quantitative by the normal approximation of~\cite{polyanskiy2010}, a block of rate above $C(\gamma)$ fails with probability tending to one. (a) Layered: every level is delivered if and only if $H(C_j\mid C_{j-1})<\rho_jC(\gamma)$ for all $j$, which needs $\rho>H(M)/C(\gamma)$ by summing; uniform: $H(M)<\rho C(\gamma)$; both thresholds coincide. (b) Level $j$ succeeds if and only if $\gamma>\gamma_{(j)}$; the first failing level is $J(\gamma)+1$, and Theorem~\ref{thm:ed} with $\varepsilon_j\in\{0,1\}$ gives $\bar d_{J(\gamma)}$. The uniform block has rate $C(\gamma_{(h)})$ and fails for every $\gamma<\gamma_{(h)}$. The budget inequality follows from $C(\gamma_{(j)})\le C(\gamma_{(h)})$.
+\end{proof}
+
+\begin{remark}[What this does not claim]
+Layering is time sharing among levels. On a degraded broadcast channel, superposition coding achieves more~\cite{cover1972}, and joint source--channel schemes degrade gracefully as well~\cite{mittal2002,shamai1998}; the layered path code is a simple achievable scheme, not an optimal one. In the finite-blocklength regime and at a known channel, splitting a budget into shorter blocks raises each block's error probability~\cite{polyanskiy2010,kostina2013}, so layering can lose; the manuscript measures this numerically (E5) instead of claiming a sign.
+\end{remark}
+
+\paragraph{Example (\texttt{check\_t34.py}, part~4).} A random tree of height three with Dirichlet source has $H(C_j\mid C_{j-1})=(0.353,0.053,0.828)$ and $H(M)=1.234$ bits. With BPSK and hard decisions, targets of $0$, $3$ and $6$~dB need $1.497$ channel uses per meaning, $18.4\%$ more than the $1.265$ of a uniform code designed for $6$~dB. Below $6$~dB the uniform code delivers only the global estimate ($\bar d_0=0.391$), while the layered one keeps the first level above $0$~dB ($\bar d_1=0.223$) and the first two above $3$~dB ($\bar d_2=0.191$).
+
+\paragraph{Design implication (RTLS).} Tags far from an anchor see a lower signal-to-noise ratio. Layering lets every tag deliver the floor, the tags with a fair link also the wing, and only those with a good link the room, at a price in airtime that Proposition~\ref{prop:sep} gives in closed form.
+
+\begin{thebibliography}{9}
+\bibitem{polyanskiy2010} Y.~Polyanskiy, H.~V.~Poor, and S.~Verd\'u, ``Channel coding rate in the finite blocklength regime,'' \emph{IEEE Trans. Inf. Theory}, vol.~56, no.~5, pp.~2307--2359, 2010, doi:10.1109/tit.2010.2043769.
+\bibitem{kostina2013} V.~Kostina and S.~Verd\'u, ``Lossy joint source-channel coding in the finite blocklength regime,'' \emph{IEEE Trans. Inf. Theory}, vol.~59, no.~5, pp.~2545--2575, 2013, doi:10.1109/tit.2013.2238657.
+\bibitem{cover2006} T.~M.~Cover and J.~A.~Thomas, \emph{Elements of Information Theory}, 2nd~ed. Hoboken, NJ, USA: Wiley, 2006, doi:10.1002/047174882X.
+\bibitem{equitz1991} W.~H.~R.~Equitz and T.~M.~Cover, ``Successive refinement of information,'' \emph{IEEE Trans. Inf. Theory}, vol.~37, no.~2, pp.~269--275, 1991, doi:10.1109/18.75242.
+\bibitem{cover1972} T.~Cover, ``Broadcast channels,'' \emph{IEEE Trans. Inf. Theory}, vol.~18, no.~1, pp.~2--14, 1972, doi:10.1109/tit.1972.1054727.
+\bibitem{mittal2002} U.~Mittal and N.~Phamdo, ``Hybrid digital-analog (HDA) joint source-channel codes for broadcasting and robust communications,'' \emph{IEEE Trans. Inf. Theory}, vol.~48, no.~5, pp.~1082--1102, 2002, doi:10.1109/18.995544.
+\bibitem{shamai1998} S.~Shamai, S.~Verd\'u, and R.~Zamir, ``Systematic lossy source/channel coding,'' \emph{IEEE Trans. Inf. Theory}, vol.~44, no.~2, pp.~564--579, 1998, doi:10.1109/18.661505.
+\end{thebibliography}
+
+\end{document}

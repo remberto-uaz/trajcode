@@ -1,0 +1,8 @@
+case,not_refinable,trials,max_residual,unique_failures,min_sigma_failures
+"Hamming, random P_M (control)",0,60,0.0,0,nan
+"Random ultrametric, uniform P_M",0,60,0.0,0,nan
+"Balanced binary tree (8 leaves), uniform P_M",0,60,0.0,0,nan
+"Random ultrametric, random P_M",11,60,0.0034171929504256205,11,0.3397674160972502
+"Balanced binary tree (8 leaves), random P_M",23,60,0.006577130150639148,23,0.35149605096939296
+"Path metric, random P_M",13,60,0.004638664398133469,13,0.2403043322226389
+"Cycle metric, random P_M",15,60,0.008227844466740977,15,0.3689069434389126

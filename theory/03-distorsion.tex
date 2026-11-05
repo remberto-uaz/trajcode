@@ -1,0 +1,189 @@
+% theory/03-distorsion.tex — T08: Part 3, geodesic rate-distortion
+% Project SemComV1 · feature 001-codigo-trayectoria · 2026-10-13
+% Notation: theory/00-modelo.tex. Checks: check_t08.py, check_t08b.py, ejemplo_semana_rd.py.
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\doi}[1]{doi:\,\url{#1}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{conjecture}{Conjecture}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\Q}{\mathcal{Q}}
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator{\diam}{diam}
+
+\title{Path Codes on Shared Knowledge Graphs\\[2pt]\large Part 3: Geodesic Rate--Distortion}
+\author{R.~Sandoval Ar\'echiga (working notes)}
+\date{October 13, 2026 --- v0.1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let semantic distortion be the distance between meanings in a shared concept graph. Merging nearby meanings into classes is a quotient code. Quotient codes achieve points of the rate--distortion function's region, are tight at both ends, and are strictly suboptimal in between, in an explicit example for every intermediate distortion. Nested quotients along a hierarchy give progressive transmission at no cost within this class of codes. Whether the Shannon-optimal descriptions are also successively refinable depends on more than the metric. Ultrametric (tree) distortion is not sufficient: random non-uniform sources fail the Equitz--Cover condition in $18$--$38\%$ of trials. With uniform sources we found no failure in $120$ trials, which we state as a conjecture.
+\end{abstract}
+
+\section{Setting}
+
+Meanings $M\in\M$ have law $P_M$, induced by walks as in Part~0. A connected graph $O$ on $\M$ (an ontology) defines the geodesic distortion $d(m,\hat m)=d_O(m,\hat m)$. This is a metric, with $d(m,\hat m)\ge1$ for $m\neq\hat m$. The rate--distortion function is
+\[
+R(D)=\min_{P_{\hat M\mid M}:\ \E d(M,\hat M)\le D} I(M;\hat M),
+\]
+the operational limit for long blocks of i.i.d.\ meanings~\cite{cover2006}. Reproductions are meanings, $\hat M\in\M$. It is computed numerically with the Blahut--Arimoto algorithm~\cite{blahut1972,arimoto1972}.
+
+\begin{definition}[Quotient codes]
+A quotient code is a partition $\Q=\{B_1,\dots,B_J\}$ of $\M$ with representatives $b_j\in B_j$. The encoder sends the class index of $M$, and the decoder outputs its representative. It operates at the point $(D_\Q,H(\Q))$, where
+\[
+D_\Q=\sum_j\min_{b\in B_j}\sum_{m\in B_j}P_M(m)\,d(m,b),\qquad H(\Q)=-\sum_jP_M(B_j)\log_2P_M(B_j).
+\]
+Its worst-case distortion is at most $\diam(\Q)=\max_j\max_{m,m'\in B_j}d(m,m')$.
+\end{definition}
+
+The original note proposed quotient codes as ``the codebook at distortion $D$''. The results below show that they are an achievable scheme but not the optimal codebook in general.
+
+\section{Quotient codes versus $R(D)$}
+
+Let $\underline{R}_\Q(D)$ be the lower convex envelope of the points $(D_\Q,H(\Q))$ over all partitions, and let $D_{\max}=\min_{b}\E\,d(M,b)$.
+
+\begin{theorem}[Geodesic rate--distortion]\label{thm:rd}
+\begin{enumerate}
+\item[(a)] \emph{(Achievability.)} $R(D)\le\underline{R}_\Q(D)$ for all $D\ge0$.
+\item[(b)] \emph{(Tight ends.)} $R(0)=\underline{R}_\Q(0)=H(M)$, and $R(D)=\underline{R}_\Q(D)=0$ for $D\ge D_{\max}$.
+\item[(c)] \emph{(Strict inside.)} There are instances with $R(D)<\underline{R}_\Q(D)$ for every $D\in(0,D_{\max})$.
+\item[(d)] \emph{(Worst case.)} Every partition with $\diam(\Q)\le D$ guarantees distortion at most $D$ for every meaning, not only on average.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) A quotient code is a deterministic test channel $\hat M=b(\Q(M))$, so $I(M;\hat M)=H(\hat M)\le H(\Q)$ and $\E d(M,\hat M)=D_\Q$. Hence $R(D_\Q)\le H(\Q)$. Because $R$ is convex and non-increasing~\cite{cover2006}, it lies below every chord between such points and below every horizontal ray to their right, hence below $\underline{R}_\Q$.
+
+(b) At $D=0$, the constraint forces $\hat M=M$ almost surely, because $d(m,\hat m)\ge1$ for $m\ne\hat m$. So $R(0)=H(M)$, which the partition into singletons achieves. For $D\ge D_{\max}$, the one-class partition with the best representative has rate $0$.
+
+(c) Take two meanings at distance $1$ with $P_M=(p,1-p)$, $p\le\tfrac12$. Then $d$ is the Hamming distortion, $R(D)=h(p)-h(D)$ for $0\le D\le p$, and $D_{\max}=p$~\cite{cover2006}. The only partitions are the singletons, at $(0,h(p))$, and the single class, at $(p,0)$. Hence $\underline{R}_\Q$ is the segment between these two points. Since $h$ is strictly concave, $R$ is strictly convex on $[0,p]$ and lies strictly below that segment for $0<D<p$.
+
+(d) Every meaning is at distance at most $\diam(\Q)$ from the representative of its class.
+\end{proof}
+
+\begin{remark}[What the gap means]
+The gap $\underline{R}_\Q-R$ is the price of deciding \emph{deterministically}, meaning by meaning, which distinctions to drop. Long block codes recover it by quantising sequences of meanings jointly. In experiment E3 (25 random sources per family; six meanings for path and cycle, 3--7 leaves for the ultrametric trees), the average gap peaks at $0.24$ bits (path), $0.27$ bits (cycle) and $0.28$ bits (random ultrametric), and vanishes at both ends (Fig.~E3b; \texttt{experiments/e3\_distorsion.py}).
+\end{remark}
+
+\section{Hierarchies and progressive transmission}
+
+Let $O$ be induced by a rooted tree of height $h$ whose leaves are the meanings, with $d(m,m')=h-\operatorname{depth}(\operatorname{lca}(m,m'))$, an ultrametric. Let $\Q_\ell$ be the partition of the leaves by their ancestor at depth $\ell$, so $\Q_0\preceq\Q_1\preceq\dots\preceq\Q_h$, each refining the previous one, and $\diam(\Q_\ell)\le h-\ell$.
+
+\begin{proposition}[Nested quotients refine at no cost]\label{prop:nested}
+Sending the class in $\Q_{\ell}$ and then the refinement to $\Q_{\ell'}$, $\ell<\ell'$, costs $H(\Q_\ell)+H(\Q_{\ell'}\mid\Q_\ell)=H(\Q_{\ell'})$. Within quotient codes, progressive transmission along a hierarchy is therefore lossless in rate. At stage $\ell$ every meaning is within distance $h-\ell$ of the decoded class representative.
+\end{proposition}
+
+\begin{proof}
+$\Q_{\ell'}$ refines $\Q_\ell$, so $H(\Q_\ell,\Q_{\ell'})=H(\Q_{\ell'})$; then apply the chain rule. The distance bound is Theorem~\ref{thm:rd}(d).
+\end{proof}
+
+\begin{corollary}[Graceful truncation of path codes]\label{cor:truncation}
+Suppose the network contains the hierarchy, and an adapted path code (Part~1) selects for each meaning $m$ the root-to-leaf walk of the tree, so that its $\ell$-th decision enters the depth-$\ell$ ancestor of $m$. Then, for every $\ell=1,\dots,h$, the first $\ell$ decisions identify the class $B_\ell(M)\in\Q_\ell$, and:
+\begin{enumerate}
+\item[(a)] their ideal cost is exactly $-\log_2P_M(B_\ell(M))$, with mean $H(\Q_\ell)$;
+\item[(b)] if each decision is coded by a Shannon code for its conditional law, the code is decodable decision by decision. The receiver then knows $B_\ell(M)$ after at most $H(\Q_\ell)+\ell$ bits on average, and $M$ after at most $H(M)+h$;
+\item[(c)] at that point every meaning compatible with the received prefix is within distance $h-\ell$ of the class representative.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+(a) The selected walks of the meanings in a class $B\in\Q_\ell$ share the prefix through the ancestors of $B$, and no other selected walk does. So the selected-walk law gives that prefix probability $P_M(B)$, and the product of the conditional decision probabilities telescopes to it. (b) A Shannon code assigns $\lceil-\log_2 q\rceil<-\log_2q+1$ bits to a decision of conditional probability $q$, and is prefix-free given the decisions already decoded. Summing over the first $\ell$ decisions and averaging gives $H(\Q_\ell)+\ell$; with $\ell=h$, $H(\Q_h)=H(M)$. (c) is Theorem~\ref{thm:rd}(d).
+\end{proof}
+
+\begin{remark}[Why decode walk by walk]
+Corollary~\ref{cor:truncation} turns a single path code into a progressive code for every level at once, with no layered design: any truncation of the message is a coarser description, and the shared graph provides it. An optimal code over meaning indices gives no such guarantee. In $500$ random hierarchies, the Huffman code of $P_M$ did not reveal the level-1 class through any common prefix in $313$ cases (script \texttt{check\_t09c.py}). The price is at most $h$ bits per meaning with Shannon codes per decision, or $2$ per level with flushed arithmetic coding. Combined with Part~4, if level~1 of the hierarchy is the receiver's action partition, the receiver can act after $H(a(M))+1$ bits on average and refine to the full meaning later.
+\end{remark}
+
+This is the ``coarse then fine'' transmission of the original note (``day of the week'', then ``Monday''), and it is free within quotient codes. The harder question is whether the \emph{Shannon-optimal} descriptions, which beat quotient codes by Theorem~\ref{thm:rd}(c), can also be refined without loss. This is successive refinability~\cite{equitz1991,rimoldi1994}: there must exist optimal test channels for $D_2<D_1$ such that $M\to\hat M_2\to\hat M_1$ is a Markov chain.
+
+\paragraph{Numerical test (experiment E3, \texttt{results/e3\_refinabilidad.csv}).} For each instance we compute optimal joint laws $J_1,J_2$ at two slopes with Blahut--Arimoto, run to a fixed-point tolerance of $10^{-13}$. We then solve a linear programme for a stochastic matrix $W$ with $J_2W=J_1$ and record the minimal $\ell_1$ residual, where zero means refinable. Hamming distortion serves as a control.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Distortion and source & not refinable & max.\ residual\\
+\midrule
+Hamming, random $P_M$ (control) & $0/60$ & $0$\\
+Random ultrametric, uniform $P_M$ & $0/60$ & $0$\\
+Balanced binary tree (8 leaves), uniform $P_M$ & $0/60$ & $0$\\
+Random ultrametric, random $P_M$ & $11/60$ & $3.4\times10^{-3}$\\
+Balanced binary tree (8 leaves), random $P_M$ & $23/60$ & $6.6\times10^{-3}$\\
+Path metric, random $P_M$ & $13/60$ & $4.6\times10^{-3}$\\
+Cycle metric, random $P_M$ & $15/60$ & $8.2\times10^{-3}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{remark}[Caveat]
+A positive residual shows that the computed optimal channels are not degraded versions of each other. When the optimal channel is not unique, another pair might still be. Hence the failures are strong numerical evidence against refinability, not proofs. The control's exact zeros indicate that the procedure does not create spurious failures.
+\end{remark}
+
+\begin{conjecture}[Uniform hierarchical sources]\label{conj:sr}
+If $d$ is an ultrametric on $\M$ and $P_M$ is uniform, then $P_M$ is successively refinable under $d$.
+\end{conjecture}
+
+\begin{remark}[A proof route for balanced trees]
+For a balanced tree and uniform $P_M$, the distortion matrix is invariant under the automorphism group of the tree, which acts transitively on the leaves. At slopes where every reproduction is used, the optimal output law is then uniform, and the optimal channel is $W_\beta\propto\exp(-\beta d)$. These matrices lie in a commutative algebra of tree-invariant matrices and are simultaneously diagonalisable. Refinability between slopes $\beta_1<\beta_2$ reduces to the entrywise non-negativity of $W_{\beta_2}^{-1}W_{\beta_1}$, which lies in the same algebra. Proving it for all levels is the remaining step. Unbalanced trees, where uniform outputs are not guaranteed, are the harder case.
+\end{remark}
+
+\section{Example: ``what day is today'' (Parts 0--2)}
+
+Meanings (Mon, Tue, Wed) with $P_M=(0.5,0.3,0.2)$ and distances $d(\text{Mon},\text{Tue})=d(\text{Tue},\text{Wed})=1$, $d(\text{Mon},\text{Wed})=2$. The quotient points are:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Partition (representative) & $D_\Q$ & $H(\Q)$\\
+\midrule
+singletons & $0$ & $1.485$\\
+$\{\text{Mon}\},\{\text{Tue},\text{Wed}\}$ (Tue) & $0.2$ & $1.000$\\
+$\{\text{Mon},\text{Tue}\},\{\text{Wed}\}$ (Mon) & $0.3$ & $0.722$\\
+$\{\text{Mon},\text{Wed}\},\{\text{Tue}\}$ (Mon) & $0.4$ & $0.881$\\
+single class (Mon) & $0.7$ & $0$\\
+\bottomrule
+\end{tabular}
+\end{center}
+The envelope uses the first, third and last.
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule
+$D$ & $0.1$ & $0.2$ & $0.3$ & $0.5$\\
+\midrule
+$R(D)$ (Blahut--Arimoto) & $0.974$ & $0.667$ & $0.439$ & $0.119$\\
+quotient envelope & $1.231$ & $0.976$ & $0.722$ & $0.361$\\
+gap & $0.257$ & $0.309$ & $0.283$ & $0.242$\\
+\bottomrule
+\end{tabular}
+\end{center}
+At $D=0.3$, merging Monday with Tuesday costs $0.722$ bits, while an optimal block code needs $0.439$. Note that $\{\text{Mon},\text{Wed}\}$, although of diameter $2$, is never on the envelope: the geometry of $O$ shapes which merges are efficient.
+
+\section{What a reviewer will ask}
+
+\begin{enumerate}
+\item \emph{``Comparing one-shot quotients with asymptotic $R(D)$ is unfair.''} The comparison is the point. It quantifies what is lost by the quotient codebook proposed in the original note and in graph-based semantic compression, and shows that block coding over meanings recovers it.
+\item \emph{``Geodesic distortion is just a distortion matrix.''} As a matrix, yes, so the results of~\cite{cover2006,niu2025} apply. The graph adds diameter guarantees (Theorem~\ref{thm:rd}(d)), nested hierarchies (Proposition~\ref{prop:nested}), and a refinability question whose answer depends on the metric and on the source together (Conjecture~\ref{conj:sr}).
+\item \emph{``Is the conjecture true?''} Unproven. It is supported by $120$ trials without failure, and contrasted with $34$ failures in $120$ trials of the same metrics with non-uniform sources. A proof for balanced trees appears within reach.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{cover2006} T.~M.~Cover and J.~A.~Thomas, \emph{Elements of Information Theory}. Wiley, 2005. \doi{10.1002/047174882X}.
+\bibitem{blahut1972} R.~E.~Blahut, ``Computation of channel capacity and rate-distortion functions,'' \emph{IEEE Trans. Inf. Theory}, vol.~18, no.~4, pp.~460--473, 1972. \doi{10.1109/TIT.1972.1054855}.
+\bibitem{arimoto1972} S.~Arimoto, ``An algorithm for computing the capacity of arbitrary discrete memoryless channels,'' \emph{IEEE Trans. Inf. Theory}, vol.~18, no.~1, pp.~14--20, 1972. \doi{10.1109/TIT.1972.1054753}.
+\bibitem{equitz1991} W.~H.~R.~Equitz and T.~M.~Cover, ``Successive refinement of information,'' \emph{IEEE Trans. Inf. Theory}, vol.~37, no.~2, pp.~269--275, 1991. \doi{10.1109/18.75242}.
+\bibitem{rimoldi1994} B.~Rimoldi, ``Successive refinement of information: characterization of the achievable rates,'' \emph{IEEE Trans. Inf. Theory}, vol.~40, no.~1, pp.~253--259, 1994. \doi{10.1109/18.272493}.
+\bibitem{niu2025} K.~Niu and P.~Zhang, \emph{The Mathematical Theory of Semantic Communication}. SpringerBriefs in Computer Science, 2025. \doi{10.1007/978-981-96-5132-0}.
+\end{thebibliography}
+\end{document}

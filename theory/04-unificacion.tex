@@ -1,0 +1,107 @@
+% theory/04-unificacion.tex — T09: Part 4, Weaver's levels as a chain of quotients
+% Project SemComV1 · feature 001-codigo-trayectoria · 2026-10-13
+% Notation: theory/00-modelo.tex. Numbers: ejemplo_semana.py.
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\doi}[1]{doi:\,\url{#1}}
+
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\Pset}{\Pi}
+\newcommand{\E}{\mathbb{E}}
+
+\title{Path Codes on Shared Knowledge Graphs\\[2pt]\large Part 4: Weaver's Levels as a Chain of Quotients}
+\author{R.~Sandoval Ar\'echiga (working notes)}
+\date{October 13, 2026 --- v0.1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Weaver's technical, semantic and effectiveness levels (as presented in~\cite{gunduz2023}) correspond, in the path-code model, to three partitions of the set of walks. Each coarsens the previous one, and they form a chain in Shannon's lattice of information~\cite{shannon1953}. The lossless rates are $H(\Pi)\ge H(M)\ge H(a(M))$. The gaps are the synonymy entropy $H(\Pi\mid M)$ and the action-irrelevance entropy $H(M\mid a(M))$. When the receiver has side information, the effectiveness level is exactly Orlitsky and Roche's coding for computing~\cite{orlitsky2001}. This part is a unifying discussion; its proofs are short. We claim the organisation, not the individual rates.
+\end{abstract}
+
+\section{Three partitions of the walks}
+
+Let $\Pset_G$ be the set of complete walks with law $P$, $\mu:\Pset_G\to\M$ the meaning map, and $a:\M\to\A$ the receiver's decision rule, i.e.\ the action it takes upon understanding $m$.
+
+\begin{definition}[Level partitions]
+\begin{itemize}
+\item \emph{Technical (A):} the identity partition $\mathcal{L}_A=\{\{\pi\}:\pi\in\Pset_G\}$. The receiver must recover the walk.
+\item \emph{Semantic (B):} $\mathcal{L}_B=\{\mu^{-1}(m):m\in\M\}$. The receiver must recover the meaning.
+\item \emph{Effectiveness (C):} $\mathcal{L}_C=\{(a\circ\mu)^{-1}(\alpha):\alpha\in\A\}$. The receiver must take the right action.
+\end{itemize}
+\end{definition}
+
+Each partition coarsens the previous one ($\mathcal{L}_A\succeq\mathcal{L}_B\succeq\mathcal{L}_C$), since walks with the same meaning lead to the same action.
+
+\begin{proposition}[Chain of rates]\label{prop:chain}
+\begin{enumerate}
+\item[(i)] The optimal lossless rates at the three levels are $H(\Pi)\ge H(M)\ge H(a(M))$.
+\item[(ii)] $H(\Pi)-H(M)=H(\Pi\mid M)$ and $H(M)-H(a(M))=H(M\mid a(M))$.
+\item[(iii)] Level C is the zero-distortion point of Part~3 under the \emph{action distortion} $d_a(m,\hat m)=\mathbf{1}[a(m)\neq a(\hat m)]$: $R_{d_a}(0)=H(a(M))$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Recovering a function of the source losslessly costs the entropy of that function~\cite{cover2006}. Each level is a function of the previous one, so the entropies decrease. (ii) is the chain rule, since $M$ is a function of $\Pi$ and $a(M)$ is a function of $M$. (iii) With $d_a$, zero distortion means $a(\hat M)=a(M)$ almost surely. The least $I(M;\hat M)$ is then attained by any deterministic $\hat M$ that is a function of $a(M)$ only, with $I=H(a(M))$. It cannot be lower, because $a(\hat M)=a(M)$ is a function of $\hat M$, so $I(M;\hat M)\ge I(M;a(M))=H(a(M))$.
+\end{proof}
+
+\begin{remark}[Shannon's lattice]
+Shannon~\cite{shannon1953} observed that information elements, identified with partitions of the outcome space, form a lattice ordered by refinement. Proposition~\ref{prop:chain} places Weaver's three levels as a chain in that lattice, specialised to walks on a shared graph. Niu and Zhang~\cite[\S2.3]{niu2025} also note Shannon's lattice as a precursor of synonymous mappings, i.e.\ of level B.
+\end{remark}
+
+\section{The effectiveness level with side information}
+
+Suppose the receiver also observes side information $Y$ jointly distributed with $M$ (its context, sensor readings or prior knowledge), and acts by $a(M,Y)$.
+
+\begin{proposition}[Level C is coding for computing]\label{prop:computing}
+The optimal rate for the receiver to compute $a(M,Y)$ with vanishing error probability, over i.i.d.\ blocks, is the conditional graph entropy $H_{\mathcal{G}}(M\mid Y)$ of the characteristic graph of $(a,P_{MY})$~\cite{orlitsky2001}, with
+\[
+H(a(M,Y)\mid Y)\le H_{\mathcal{G}}(M\mid Y)\le H(M\mid Y).
+\]
+\end{proposition}
+
+\begin{proof}
+This is Orlitsky and Roche's theorem~\cite{orlitsky2001}, applied with $X=M$. The characteristic graph connects $m,m'$ if some $y$ with $P(m,y)P(m',y)>0$ has $a(m,y)\neq a(m',y)$. The zero-error relatives of this construction are due to Witsenhausen~\cite{witsenhausen1976} and Alon and Orlitsky~\cite{alon1996}.
+\end{proof}
+
+\begin{remark}[Reading the chain]
+Going from level B to level C, the meaning set is quotiented by ``indistinguishable for the action'', and side information can only merge more classes. This is the more aggressive quotient of the original note: pruning the graph to the subgraph relevant for the receiver's decision. Goal-oriented formulations~\cite{goldreich2012,stavrou2023} fix the action or the fidelity criterion. Here the action enters only through the partition it induces, which is why it composes with the path-code results:
+\begin{itemize}
+\item a native path code at level C pays the price of Part~1 relative to $H(a(M))$, with $\Pset(m)$ replaced by $(a\circ\mu)^{-1}(\alpha)$;
+\item misalignment in Part~2 splits further into an action-relevant part and an irrelevant part;
+\item a misaligned label of type (iii) is harmless at level C when it does not change the action.
+\end{itemize}
+\end{remark}
+
+\section{Example: ``what day is today''}
+
+Take the action ``open the weekly report'', which is taken on Monday only: $a(\text{Mon})=1$ and $a(\text{Tue})=a(\text{Wed})=0$. Then
+\[
+H(\Pi)=2.456\ \ \ge\ \ H(M)=1.485\ \ \ge\ \ H(a(M))=h(0.5)=1.000\ \text{bits}.
+\]
+The gaps are $H(\Pi\mid M)=0.971$ bits of synonymy (phrasing) and $H(M\mid a(M))=0.485$ bits of action-irrelevant detail (Tuesday versus Wednesday). A label edit that swaps Tuesday and Wednesday at the receiver causes a silent semantic error at level B but none at level C.
+
+\begin{thebibliography}{9}
+\bibitem{gunduz2023} D.~G\"und\"uz \emph{et al.}, ``Beyond transmitting bits: Context, semantics, and task-oriented communications,'' \emph{IEEE J. Sel. Areas Commun.}, vol.~41, no.~1, pp.~5--41, 2023. \doi{10.1109/JSAC.2022.3223408}.
+\bibitem{shannon1953} C.~E.~Shannon, ``The lattice theory of information,'' \emph{Trans. IRE Prof. Group Inf. Theory}, vol.~1, no.~1, 1953. \doi{10.1109/tit.1953.1188572}.
+\bibitem{orlitsky2001} A.~Orlitsky and J.~R.~Roche, ``Coding for computing,'' \emph{IEEE Trans. Inf. Theory}, 2001. \doi{10.1109/18.915643}.
+\bibitem{witsenhausen1976} H.~S.~Witsenhausen, ``The zero-error side information problem and chromatic numbers,'' \emph{IEEE Trans. Inf. Theory}, 1976. \doi{10.1109/tit.1976.1055607}.
+\bibitem{alon1996} N.~Alon and A.~Orlitsky, ``Source coding and graph entropies,'' \emph{IEEE Trans. Inf. Theory}, 1996. \doi{10.1109/18.532875}.
+\bibitem{goldreich2012} O.~Goldreich, B.~Juba, and M.~Sudan, ``A theory of goal-oriented communication,'' \emph{J. ACM}, vol.~59, no.~2, 2012. \doi{10.1145/2160158.2160161}.
+\bibitem{stavrou2023} P.~A.~Stavrou and M.~Kountouris, ``The role of fidelity in goal-oriented semantic communication: A rate distortion approach,'' \emph{IEEE Trans. Commun.}, vol.~71, pp.~3918--3931, 2023. \doi{10.1109/tcomm.2023.3274122}.
+\bibitem{niu2025} K.~Niu and P.~Zhang, \emph{The Mathematical Theory of Semantic Communication}. SpringerBriefs in Computer Science, 2025. \doi{10.1007/978-981-96-5132-0}.
+\bibitem{cover2006} T.~M.~Cover and J.~A.~Thomas, \emph{Elements of Information Theory}. Wiley, 2005. \doi{10.1002/047174882X}.
+\end{thebibliography}
+\end{document}

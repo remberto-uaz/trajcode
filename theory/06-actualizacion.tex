@@ -1,0 +1,129 @@
+% theory/06-actualizacion.tex — T38: Part 6, updating shared knowledge (Option C)
+% Project SemComV1 · feature 002-tcom · 2026-10-28
+% Notation: theory/00-modelo.tex and Part 2. Checks: tests/test_kbupdate.py, experiments/e6_actualizacion.py.
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{observation}{Observation}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\ALG}{\mathrm{ALG}}
+\newcommand{\OPT}{\mathrm{OPT}}
+
+\title{Path Codes on Shared Knowledge Graphs\\[2pt]\large Part 6: When to Update the Shared Knowledge}
+\author{R.~Sandoval Ar\'echiga et al.\ (working notes)}
+\date{October 28, 2026 --- v0.1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+When the receiver's routing statistics are out of date, every visit to an edited node costs the transmitter extra bits, and sending the current kernel of that node once removes the cost for good. With a known number of messages the best set of nodes to update is found node by node in linear time (Proposition~\ref{prop:c1}). When the number of messages is not known in advance, the decision at each node is an instance of ski rental: update a node when the extra bits it has cost, counting the current message, would reach the cost of updating it. This rule never pays more than twice the cost of the best decision taken with hindsight, for every sequence of messages, and no deterministic rule does better in the worst case (Proposition~\ref{prop:c2}). Three natural heuristics, among them synchronising every edited node as soon as it is used, have no such guarantee (Observation~\ref{obs:heur}).
+\end{abstract}
+
+\section{Setting}
+
+The transmitter routes with kernels $p_S(\cdot\mid v)$, and the receiver decodes with kernels $q(\cdot\mid v)$ on the same graph (routing edits only; Part~2, Proposition~1). As in Assumption~A5, the transmitter knows $q$. Let $\nu_S(v)$ be the probability that a walk visits $v$ and
+\[
+D_v=D\bigl(p_S(\cdot\mid v)\,\big\|\,q(\cdot\mid v)\bigr).
+\]
+Let $V_\Delta=\{v:\nu_S(v)>0,\ D_v>0\}$ be the edited nodes that are used. By Part~2, Theorem~1(b), a message costs $H(P_S)+\sum_{v}\nu_S(v)D_v$ bits on average with the arithmetic code matched to $q$. Sending the current kernel of $v$ costs $c_v>0$ bits once; afterwards the receiver uses $p_S(\cdot\mid v)$ at $v$ and $v$ adds nothing. In the experiments $c_v=\lceil\log_2|V|\rceil+b\,(\deg^+(v)-1)$: the address of the node and its kernel quantised to $b$ bits per probability.
+
+We drop the common term $NH(P_S)$ from all costs. What remains is the \emph{update cost}: the bits spent on updates plus the extra bits caused by misalignment.
+
+\section{Known number of messages}
+
+\begin{proposition}[Separable rule]\label{prop:c1}
+If $N$ messages will be sent and every update is made before the first one, the expected update cost of updating a set $T\subseteq V_\Delta$ is
+\[
+J_N(T)=\sum_{v\in T}c_v+N\sum_{v\in V_\Delta\setminus T}\nu_S(v)D_v .
+\]
+It is minimised by $T^\star_N=\{v\in V_\Delta:N\nu_S(v)D_v>c_v\}$, with minimum $\sum_{v\in V_\Delta}\min\{c_v,N\nu_S(v)D_v\}$. The set $T^\star_N$ is computed in $O(|V|)$ operations once $\nu_S$ and $D$ are known, and these take $O(|E|)$ operations.
+\end{proposition}
+
+\begin{proof}
+By Part~2, Theorem~1(b), misalignment is $\sum_v\nu_S(v)D_v$, and aligning the kernel at $v$ removes exactly the term of $v$ without changing $\nu_S$, because $\nu_S$ depends only on the transmitter's kernels. Hence $J_N(T)=\sum_{v\in V_\Delta}f_v(\mathbf 1[v\in T])$ with $f_v(1)=c_v$ and $f_v(0)=N\nu_S(v)D_v$. A sum of functions of distinct binary variables is minimised by minimising each term, which gives $T^\star_N$ (ties $N\nu_S(v)D_v=c_v$ may go either way). Nodes outside $V_\Delta$ contribute $c_v$ if updated and $0$ otherwise, so no optimal set contains them. The visit probabilities $\nu_S$ follow from one pass in topological order, and each $D_v$ costs $O(\deg^+(v))$, so both take $O(|E|)$; the threshold test is one comparison per node.
+\end{proof}
+
+This is Part~2, Corollary~2, with the proof completed and the complexity stated. Updating all of $V_\Delta$ before the first message, or never updating, are both special cases of $T$, so neither beats $T^\star_N$ in expectation. Updating in the middle of the sequence cannot help either when $N$ is known: an update made after $t$ messages costs $c_v+t\,\nu_S(v)D_v$, which is never smaller than $\min\{c_v,N\nu_S(v)D_v\}$.
+
+\section{Unknown number of messages}
+
+When the horizon is unknown, the decision at each node is the ski-rental problem of online algorithms~\cite{karlin1988}: every visit to $v$ is a day of rent of $D_v$ bits, and updating $v$ is buying at $c_v$ bits.
+
+\begin{definition}[Accounted cost]\label{def:acc}
+Let $n_v(t)\in\{0,1\}$ indicate whether message $t$ visits $v$ (a walk visits a node at most once because the graph is acyclic; the results below hold for any counts $n_v(t)\ge0$). An \emph{online rule} decides, before message $t$ is sent, which nodes to update, using $n_u(1),\dots,n_u(t)$ for all $u$ but not the horizon $N$. If $v$ is updated before message $\tau_v$ ($\tau_v=\infty$ if never), its accounted cost over $N$ messages is
+\[
+\ALG_v(N)=\sum_{t<\min\{\tau_v,N+1\}}n_v(t)\,D_v+c_v\,\mathbf 1[\tau_v\le N],
+\]
+and $\ALG(N)=\sum_{v\in V_\Delta}\ALG_v(N)$. The hindsight optimum, which knows the whole sequence, is $\OPT(N)=\sum_v\min\{c_v,R_v(N)\}$ with $R_v(N)=\sum_{t\le N}n_v(t)D_v$.
+\end{definition}
+
+\begin{remark}[Accounted and real bits]\label{rem:acc}
+The accounted rent $n_v(t)D_v$ is the expected extra code length that the visit adds. The rule below decides about $v$ from the visit counts, and the step that the walk takes out of $v$ is drawn from $p_S(\cdot\mid v)$ independently of the past and of whether $v$ is visited. Given the decision, the expected excess length of coding that step with $q$ instead of $p_S$ is therefore exactly $D_v$. The accounted cost is the expected real cost, conditioned on the visit counts.
+\end{remark}
+
+\begin{proposition}[Break-even rule]\label{prop:c2}
+\textup{(a)} The rule that updates $v$ before message $t$ when $R_v(t-1)+n_v(t)D_v\ge c_v$, and $v$ has not been updated yet, satisfies
+\[
+\OPT(N)\le\ALG(N)<2\,\OPT(N)\qquad\text{whenever }\OPT(N)>0,
+\]
+for every sequence of visits and every horizon $N$. It keeps one counter per node and does $O(1)$ work per visit.
+
+\textup{(b)} For every deterministic online rule and every $\delta\in(0,1)$ there is a graph with one edited node, a cost $c_v=1$ and rent $D_v=\delta$ per visit, and a horizon $N$ for which $\ALG(N)\ge(2-\delta)\,\OPT(N)$.
+\end{proposition}
+
+\begin{proof}
+(a) The rule and both costs are sums over nodes, and $\OPT$ is the sum of the per-node optima, so it is enough to show $\min\{c_v,R_v(N)\}\le\ALG_v(N)<2\min\{c_v,R_v(N)\}$ for each $v$ with $R_v(N)>0$. If the rule has not updated $v$ by message $N$, then $R_v(N)<c_v$, $\ALG_v(N)=R_v(N)=\OPT_v$. Otherwise it updated $v$ before some message $\tau\le N$ with $R_v(\tau-1)<c_v\le R_v(\tau-1)+n_v(\tau)D_v\le R_v(N)$. Then $\OPT_v=c_v$ and $\ALG_v(N)=R_v(\tau-1)+c_v<2c_v$, and $\ALG_v(N)\ge c_v=\OPT_v$. The lower bound $\ALG\ge\OPT$ holds for any rule by definition of $\OPT$.
+
+(b) Let every message visit $v$. A deterministic rule that sees the same visits every time updates $v$ before a fixed message $\tau$ (possibly $\tau=\infty$). If $\tau=\infty$, take $N>2/\delta^{2}$: $\ALG=N\delta$ and $\OPT=1$, so $\ALG/\OPT>2/\delta>2-\delta$. Otherwise take $N=\tau$ and write $x=\tau\delta$; then $\ALG=(\tau-1)\delta+1=1+x-\delta$ and $\OPT=\min\{1,x\}$. If $x\le1$, $\ALG/\OPT=(1+x-\delta)/x\ge2-\delta$ because $1-\delta\ge x(1-\delta)$. If $x>1$, $\ALG/\OPT=1+x-\delta>2-\delta$.
+\end{proof}
+
+\begin{remark}[Randomised rules and topological edits]\label{rem:rand}
+A randomised rule that buys at a random fraction of $c_v$ achieves $e/(e-1)\approx1.58$ in expectation against an oblivious adversary~\cite{karlin1994}; we do not use it, because it does not change the comparison with the heuristics below and it makes the transmitter's behaviour random. For a topological edit the receiver lacks an edge, misalignment at that node is infinite, and the rent is infinite at the first visit; by Part~2, Proposition~1, the edit is detected. Every rule with a finite cost must then update at the first visit, which is what the break-even rule does.
+\end{remark}
+
+\begin{observation}[Heuristics without a guarantee]\label{obs:heur}
+Consider three heuristics: never updating (talk only); synchronising every edited node at its first use, which is how a binary model of mismatched knowledge treats a mismatch~\cite{chen2025mismatch}; and updating all of $V_\Delta$ at once when the total accounted rent would reach $\sum_{v\in V_\Delta}c_v$ (ski rental on the aggregate). None has a bounded ratio to $\OPT$.
+\begin{itemize}
+\item Talk only: one node with rent $\delta$ per message and $c_v=1$; for $N\ge1/\delta$ the ratio is $N\delta$, unbounded in $N$.
+\item Synchronise at first use: the same node with $N=1$; the ratio is $1/\delta$, unbounded as $\delta\to0$.
+\item Aggregate threshold: one node $a$ with $D_a=c_a=1$ and $K$ nodes with $c=1$ and rent $\delta\le1/(KN)$, all visited by every message. Then $\OPT=1+NK\delta\le2$. If the heuristic updates within the $N$ messages it pays at least the $K+1$ bits of the updates; if it does not, it pays at least $N$ bits of rent at $a$. With $N\ge K+1$ the ratio is at least $(K+1)/2$, unbounded in $K$.
+\end{itemize}
+The break-even rule avoids all three failures because it compares, node by node, the bits a node has cost with the bits needed to fix it.
+\end{observation}
+
+\begin{remark}[The factor two is reached on long horizons]\label{rem:long}
+The bound of Proposition~\ref{prop:c2}(a) is not only a worst case. When each visit costs little compared with an update ($D_v\ll c_v$), the rule pays almost $c_v$ in rent before it updates $v$, so for horizons much longer than the break-even point $c_v/(\nu_S(v)D_v)$ its cost tends to $2c_v$ per node while the hindsight optimum pays $c_v$. Knowing $N$ (Proposition~\ref{prop:c1}), or a prior on it, removes this loss. The break-even rule is the choice when nothing is known about the horizon: it is the only one of the policies we examine whose ratio to the hindsight optimum is bounded uniformly in $N$.
+\end{remark}
+
+\section{What the separable structure buys}
+
+Propositions~\ref{prop:c1} and~\ref{prop:c2} rest on the same fact: misalignment is a sum over nodes of visit frequency times local divergence (Part~2, Theorem~1). Without additivity, the offline problem is a set function over $2^{|V_\Delta|}$ subsets and the online problem is a multi-commodity rental with no per-node reduction. Policies published for knowledge bases in semantic communication update class vectors between pairs that share a base and optimise task accuracy in one round~\cite{zhang2026kb,li2024}; they have no counterpart of $D_v$ or $c_v$ in bits, so we do not compare with them numerically.
+
+\section{Open questions}
+\begin{enumerate}
+\item Correlated updates: if describing several kernels together costs less than the sum of their costs (for instance, a remodelled floor described as one block), the separable structure breaks. The online problem becomes a ski rental with bundled purchases.
+\item Prior on the horizon: with a distribution for $N$ the per-node problem is an optimal stopping problem whose solution is again a threshold on the accumulated rent; the threshold depends on the hazard rate of $N$.
+\item Drifting statistics: if $p_S$ keeps changing after the update, the rent at $v$ restarts, and a rule that tracks the accumulated rent since the last update is the natural candidate.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{karlin1988} A.~R.~Karlin, M.~S.~Manasse, L.~Rudolph, and D.~D.~Sleator, ``Competitive snoopy caching,'' \emph{Algorithmica}, vol.~3, no.~1--4, pp.~79--119, 1988, doi:10.1007/bf01762111.
+\bibitem{karlin1994} A.~R.~Karlin, M.~S.~Manasse, L.~A.~McGeoch, and S.~Owicki, ``Competitive randomized algorithms for nonuniform problems,'' \emph{Algorithmica}, vol.~11, no.~6, pp.~542--571, 1994, doi:10.1007/bf01189993.
+\bibitem{chen2025mismatch} F.~Chen, X.~Wang, X.~Fan, and L.~Huang, ``QoE-oriented hybrid semantic and bit communications under mismatched knowledge,'' \emph{IEEE Trans. Commun.}, vol.~73, no.~8, pp.~6036--6051, 2025, doi:10.1109/tcomm.2025.3538830.
+\bibitem{zhang2026kb} J.~Zhang, S.~Li, Y.~Sun, K.~Cai, H.~Chen, X.~Xu, and S.~Cui, ``Cooperative semantic knowledge base update for semantic communication networks,'' \emph{IEEE Trans. Commun.}, vol.~74, pp.~1391--1405, 2026, doi:10.1109/tcomm.2025.3636085.
+\bibitem{li2024} S.~Li, Y.~Sun, J.~Zhang, K.~Cai, H.~Chen, S.~Cui, and X.~Xu, ``Cooperative semantic knowledge base update policy for multiple semantic communication pairs,'' in \emph{Proc. IEEE Global Commun. Conf. (GLOBECOM)}, 2024, pp.~2178--2183, doi:10.1109/globecom52923.2024.10901687.
+\end{thebibliography}
+
+\end{document}

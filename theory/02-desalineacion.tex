@@ -1,0 +1,170 @@
+% theory/02-desalineacion.tex — T07 (+ Prop. 5 of T09): Part 2, structural misalignment
+% Project SemComV1 · feature 001-codigo-trayectoria · 2026-10-13
+% Notation: theory/00-modelo.tex. Checks: check_t07.py (400 random graphs, 0 failures).
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\doi}[1]{doi:\,\url{#1}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\Pset}{\Pi}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\D}{D}
+\newcommand{\supp}{\operatorname{supp}}
+
+\title{Path Codes on Shared Knowledge Graphs\\[2pt]\large Part 2: Structural Misalignment}
+\author{R.~Sandoval Ar\'echiga (working notes)}
+\date{October 13, 2026 --- v0.1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Transmitter and receiver hold different versions of the shared graph. We show that misalignment is additive over nodes and weighted by how often each node is visited. It is bounded above and below by local quantities, and it splits into a part visible at the level of meanings, which is the semantic relative entropy of Niu and Zhang~\cite{niu2025}, and a part that only path codes pay. Three kinds of edit behave in three different ways: routing edits cost bits, topological edits are detected, and label edits cause silent semantic errors at no cost in rate. Additivity also makes the decision of what knowledge to teach separable across nodes.
+\end{abstract}
+
+\section{Setting}
+
+Transmitter and receiver share the node set $V$, the root and the terminals, and hold networks $G_S$ and $G_R$ with routing kernels $p_S$ and $q_R$ and meaning maps $\mu_S$ and $\mu_R$. Let $P_S$ and $Q_R$ be the induced path measures and
+\[
+A=\D(P_S\|Q_R),\qquad \nu_S(v)=\Pr_{P_S}[v\in\Pi],\qquad D_v=\D\bigl(p_S(\cdot\mid v)\,\|\,q_R(\cdot\mid v)\bigr).
+\]
+An edge absent from $G_R$ has $q_R(e\mid v)=0$. Three kinds of edit are distinguished:
+\begin{itemize}
+\item a \emph{routing edit} at $v$ changes $q_R(\cdot\mid v)$ without changing its support;
+\item a \emph{topological edit} removes from $G_R$ an edge that $G_S$ uses;
+\item a \emph{label edit} keeps the walks and their probabilities but changes the meaning map: $\mu_R\neq\mu_S$ on some walk.
+\end{itemize}
+The transmitter emits a walk $\Pi\sim P_S$; this is the native regime of Part~1 with a random selection. The selected regime is treated in Remark~\ref{rem:selection}. To be decodable, a sequential code must use the receiver's kernel, so Theorem~\ref{thm:A}(a) assumes the transmitter knows $q_R$ (the third architecture of the original note). Without that knowledge the walk can still be sent uncompressed as edge identifiers, which is the setting of Proposition~\ref{prop:taxonomy}.
+
+\section{The cost of misalignment}
+
+\begin{theorem}[Structural misalignment]\label{thm:A}
+\begin{enumerate}
+\item[(a)] \emph{(Cost.)} A native code decodable by the receiver has rate $\E_{P_S}[-\log_2Q_R(\Pi)]=H(P_S)+A$.
+\item[(b)] \emph{(Locality.)} $A=\sum_{v}\nu_S(v)\,D_v$.
+\item[(c)] \emph{(Finiteness.)} $A<\infty$ if and only if $\supp p_S(\cdot\mid v)\subseteq\supp q_R(\cdot\mid v)$ for every $v$ with $\nu_S(v)>0$.
+\item[(d)] \emph{(Two-sided local bounds.)} Let $V_\Delta=\{v:D_v>0\}$ and let $q_{\min}(v)$ be the smallest positive value of $q_R(\cdot\mid v)$. If $A<\infty$,
+\[
+\frac{1}{2\ln 2}\sum_{v\in V_\Delta}\nu_S(v)\,\bigl\|p_S(\cdot\mid v)-q_R(\cdot\mid v)\bigr\|_1^2\;\le\;A\;\le\;\sum_{v\in V_\Delta}\nu_S(v)\log_2\frac{1}{q_{\min}(v)}.
+\]
+\item[(e)] \emph{(Meaning versus phrasing.)} If $\mu_S=\mu_R=\mu$, then
+\[
+A=\underbrace{\D(P_{S,M}\|Q_{R,M})}_{\text{meaning level}}+\underbrace{\E_{P_S}\bigl[\D(P_{S,\Pi\mid M}\|Q_{R,\Pi\mid M})\bigr]}_{\text{phrasing level}},
+\]
+where $P_{S,M}$ and $Q_{R,M}$ are the meaning laws. The first term is the full semantic relative entropy $D_s(p_s\|q_s)$ of~\cite[Def.~4.1]{niu2025}.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) This is the mismatch identity $\E_P[-\log_2Q]=H(P)+\D(P\|Q)$~\cite{cover2006}, applied to walks and realised within $2$ bits by arithmetic coding~\cite{rissanen1979}.
+
+(b) Pad every walk after its terminal with a deterministic stop symbol, so that all walks have the same length and $P_S$, $Q_R$ factorise along the decisions. The chain rule for relative entropy gives $A=\sum_{t}\E_{P_S}\bigl[\D(p_S(\cdot\mid V_{t-1})\|q_R(\cdot\mid V_{t-1}))\bigr]$, where $V_{t-1}$ is the node at step $t-1$ (a decision is taken only at non-terminal nodes). In a DAG each node is visited at most once, so collecting the terms by node gives the weight $\Pr_{P_S}[v\in\Pi]=\nu_S(v)$.
+
+(c) By (b), $A<\infty$ if and only if every $D_v$ with $\nu_S(v)>0$ is finite, which is the support condition.
+
+(d) The lower bound is Pinsker's inequality, $D_v\ge\|p-q\|_1^2/(2\ln2)$ in bits, applied to each term of (b). For the upper bound, $D_v=\sum_ep_S(e\mid v)\log_2\frac{p_S(e\mid v)}{q_R(e\mid v)}\le\sum_ep_S(e\mid v)\log_2\frac{1}{q_R(e\mid v)}\le\log_2\frac{1}{q_{\min}(v)}$. Terms with $D_v=0$ contribute nothing.
+
+(e) $M=\mu(\Pi)$ is a function of $\Pi$ under both measures, so $P_S(\pi)=P_{S,M}(\mu(\pi))P_{S,\Pi\mid M}(\pi\mid\mu(\pi))$, and likewise for $Q_R$. Taking the expectation of the logarithm of the ratio gives the identity. The first term is the relative entropy of the laws induced on the synonymous sets $\Pset(m)$, which is~\cite[Eq.~(4.1)]{niu2025}.
+\end{proof}
+
+\begin{remark}[Reading (e)]
+The meaning-level term measures disagreement about \emph{what} is likely to be said. The phrasing-level term measures disagreement about \emph{how} each meaning is likely to be phrased. A code over meanings, such as the adapted and bits-back codes of Part~1 or the codes of~\cite{niu2025,liang2025}, can be built against $Q_{R,M}$ and then pays only the first term. Native path codes pay both. Niu and Zhang assume identical background knowledge on both sides~\cite[\S2.2]{niu2025}, so neither term appears in their analysis.
+\end{remark}
+
+\begin{remark}[Selected walks]\label{rem:selection}
+With a selection $f$, only walks in the image of $f$ are ever sent, and the relevant cost is $\E[-\log_2Q_R(f(M))]$. In particular, a topological edit outside the image of $f$ costs nothing. In the running example, a code that always phrases through ``today is'' is immune to the receiver lacking the edge ``tomorrow is'' $\to$ Thursday. Selection therefore acts as robustness against partially shared knowledge.
+\end{remark}
+
+\section{Three kinds of edit}
+
+\begin{proposition}[Cost, detection, silence]\label{prop:taxonomy}
+Assume the walk is sent as the sequence of edge identifiers, so the receiver can check that each received edge exists in $G_R$.
+\begin{enumerate}
+\item[(i)] \emph{Routing edits} change only the rate, by $A=\sum_v\nu_S(v)D_v$ (Theorem~\ref{thm:A}). They never cause decoding or semantic errors.
+\item[(ii)] \emph{Topological edits} are detected. The receiver detects a mismatch with probability $P_S\bigl(\Pi\notin\supp Q_R\bigr)$, at the first missing edge and without any check bits.
+\item[(iii)] \emph{Label edits} are invisible in both senses. Rate and detectability are unchanged, and the receiver decodes a wrong meaning with probability $P_S\bigl(\mu_R(\Pi)\neq\mu_S(\Pi)\bigr)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) follows from Theorem~\ref{thm:A}(a)--(b), because the walk is decoded exactly. In (ii), a walk outside $\supp Q_R$ contains an edge absent from $G_R$, and the receiver flags it on arrival; walks inside the support are decoded as in (i). In (iii), $\mu$ does not enter $P_S$, $Q_R$ or the code, so the walk is decoded exactly and then mapped by $\mu_R$.
+\end{proof}
+
+\begin{remark}
+Proposition~\ref{prop:taxonomy} separates three failure modes that conventional analyses merge: inefficiency (i), detectable failure (ii) and silent semantic error (iii). Typed edges, as in the original note, turn the most dangerous mismatches of type (iii) into detectable ones of type (ii): if each label is carried by an edge type the receiver can check, a relabelling becomes a missing edge.
+\end{remark}
+
+\section{Corollaries}
+
+\begin{corollary}[Aligned and uninformed receivers]\label{cor:limits}
+\begin{enumerate}
+\item[(a)] If $G_R=G_S$, the rate is $H(P_S)$. This is Shannon's source coding with a known source, here a walk source.
+\item[(b)] If $G_R$ has the same topology but no statistics, i.e.\ $q_R(\cdot\mid v)$ is uniform on the out-neighbours, the rate is $\sum_v\nu_S(v)\log_2\deg^+(v)$. Each decision then costs the logarithm of its number of branches, and the excess over (a) is $A=\sum_v\nu_S(v)\bigl(\log_2\deg^+(v)-H(p_S(\cdot\mid v))\bigr)$.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+(a) $A=0$ in Theorem~\ref{thm:A}(a). (b) $-\log_2Q_R(\pi)=\sum_{v\in\pi}\log_2\deg^+(v)$; averaging under $P_S$ gives the rate. The excess follows from Theorem~\ref{thm:A}(b), since $D_v=\log_2\deg^+(v)-H(p_S(\cdot\mid v))$ against a uniform kernel.
+\end{proof}
+
+\begin{corollary}[Teach or talk is separable]\label{cor:teach}
+Suppose the transmitter can send, once, a description of $p_S(\cdot\mid v)$ that costs $c_v$ bits, after which the receiver uses $p_S(\cdot\mid v)$ at $v$. Over $N$ messages, the total cost of teaching a set $T\subseteq V$ and then talking is
+\[
+\sum_{v\in T}c_v+N\Bigl(H(P_S)+\sum_{v\notin T}\nu_S(v)D_v\Bigr).
+\]
+It is minimised by $T^\star=\{v:\,N\nu_S(v)D_v>c_v\}$. Teaching node $v$ pays off once $N>c_v/(\nu_S(v)D_v)$.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:A}(b), aligning the kernels on $T$ removes exactly the terms $v\in T$ from $A$. The objective is therefore a sum of independent terms $\mathbf{1}[v\in T]\,c_v+\mathbf{1}[v\notin T]\,N\nu_S(v)D_v$, minimised term by term.
+\end{proof}
+
+\begin{remark}
+This is the two-part code of minimum description length~\cite{rissanen1978,barron1998} with the model cost split across nodes. Separability is what makes the original note's question ``when to teach and when to talk'' answerable node by node. The cost model is additive, and correlated descriptions across nodes would require a joint treatment.
+\end{remark}
+
+\section{Example: ``what day is today'' (Part 0)}
+
+Here $H(P_S)=2.456$ bits and $\nu_S=(1,1,0.6,0.4)$ on $(r,c,a,b)$.
+\begin{center}
+\begin{tabular}{p{0.32\linewidth}p{0.58\linewidth}}
+\toprule
+Edit & Effect \\
+\midrule
+Routing: $q_R(\cdot\mid a)$ uniform & $A=0.060$ bits, between the Pinsker bound $0.048$ and the upper bound $0.951$. Split: $0.036$ (meaning) $+\,0.024$ (phrasing). No errors.\\
+Topological: no edge $b\to$ Thu & Detected with probability $0.08$. A selection through ``today is'' never uses the edge and pays nothing.\\
+Label: receiver reads ``tomorrow is X'' as ``today is X'' & No rate cost and no detection. Silent semantic error with probability $0.400$.\\
+Uninformed receiver (uniform kernels) & Rate $2.585$ bits $=\sum_v\nu_S(v)\log_2\deg^+(v)$, an excess of $0.129$ bits over $H(P_S)$.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{What a reviewer will ask}
+
+\begin{enumerate}
+\item \emph{``(a)--(c) are textbook.''} They are, and they are cited as such. The contributions are the localisation (b) read as a property of shared graphs, the two-sided local bounds (d), the meaning/phrasing split (e) that places the semantic relative entropy of~\cite{niu2025} inside a larger quantity, the three-way separation of Proposition~\ref{prop:taxonomy}, and the separability of teaching (Corollary~\ref{cor:teach}).
+\item \emph{``Why should the receiver know the edge identifiers?''} In Proposition~\ref{prop:taxonomy}(ii) the identifiers are names of shared concepts or relations, which is the premise of a shared knowledge graph. If they are not shared, (ii) degenerates into (iii).
+\item \emph{``The cost model in Corollary~\ref{cor:teach} is crude.''} Yes. It is the simplest model that exhibits the trade-off. Replacing $c_v$ by the description length of $p_S(\cdot\mid v)$ to precision $\varepsilon$ gives the familiar $\tfrac{\deg^+(v)-1}{2}\log_2N$ MDL cost~\cite{barron1998}, under which the threshold becomes $N\nu_S(v)D_v\gtrsim\tfrac{\deg^+(v)-1}{2}\log_2N$.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{niu2025} K.~Niu and P.~Zhang, \emph{The Mathematical Theory of Semantic Communication}. SpringerBriefs in Computer Science, 2025. \doi{10.1007/978-981-96-5132-0}.
+\bibitem{liang2025} Z.~Liang, K.~Niu, J.~Xu, and P.~Zhang, ``Semantic arithmetic coding using synonymous mappings,'' \emph{Entropy}, vol.~27, no.~4, art.~429, 2025. \doi{10.3390/e27040429}.
+\bibitem{cover2006} T.~M.~Cover and J.~A.~Thomas, \emph{Elements of Information Theory}. Wiley, 2005. \doi{10.1002/047174882X}.
+\bibitem{rissanen1979} J.~Rissanen and G.~G.~Langdon, ``Arithmetic coding,'' \emph{IBM J. Res. Dev.}, 1979. \doi{10.1147/rd.232.0149}.
+\bibitem{rissanen1978} J.~Rissanen, ``Modeling by shortest data description,'' \emph{Automatica}, vol.~14, no.~5, pp.~465--471, 1978. \doi{10.1016/0005-1098(78)90005-5}.
+\bibitem{barron1998} A.~Barron, J.~Rissanen, and B.~Yu, ``The minimum description length principle in coding and modeling,'' \emph{IEEE Trans. Inf. Theory}, vol.~44, no.~6, pp.~2743--2760, 1998. \doi{10.1109/18.720554}.
+\end{thebibliography}
+\end{document}

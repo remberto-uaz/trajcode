@@ -1,0 +1,6 @@
+task,size_name,slope,slope_last_pair,min_size,max_size
+viterbi_dp,E,1.1,1.3,463,68016
+update_rule_C1,E,1.1,1.4,463,68016
+online_rule_C2,visits,0.9,1,1000,1000000
+allocation_dp_h3,n,1.8,2,64,1024
+memory_states_Nf,meanings,1.8,2,8,128
