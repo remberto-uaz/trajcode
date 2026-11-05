@@ -1,5 +1,7 @@
 # trajcode — knowledge graphs as codebooks for semantic communication
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23987514.svg)](https://doi.org/10.5281/zenodo.23987514)
+
 Code, data and results for the paper
 
 > R. Sandoval Aréchiga, J. R. Gómez Rodríguez, V. I. Rodríguez Abdalá, S. Ibarra Delgado and A. G. Castañeda Miranda,
@@ -81,4 +83,4 @@ GPL-3.0-or-later (see `LICENSE`). WordNet keeps its own license.
 
 ## Citation
 
-See `CITATION.cff`. Contact: Remberto Sandoval Aréchiga, Posgrado en Ingeniería para la Innovación Tecnológica, Universidad Autónoma de Zacatecas, rsandoval@uaz.edu.mx.
+Archived on Zenodo: version 1.0.0, [10.5281/zenodo.23987514](https://doi.org/10.5281/zenodo.23987514); all versions, [10.5281/zenodo.23987513](https://doi.org/10.5281/zenodo.23987513). See `CITATION.cff`. Contact: Remberto Sandoval Aréchiga, Posgrado en Ingeniería para la Innovación Tecnológica, Universidad Autónoma de Zacatecas, rsandoval@uaz.edu.mx.
