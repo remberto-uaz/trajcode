@@ -81,4 +81,4 @@ GPL-3.0-or-later (see `LICENSE`). WordNet keeps its own license.
 
 ## Citation
 
-See `CITATION.cff`. Contact: Remberto Sandoval Aréchiga, Universidad Autónoma de Zacatecas, rsandoval@uaz.edu.mx.
+See `CITATION.cff`. Contact: Remberto Sandoval Aréchiga, Posgrado en Ingeniería para la Innovación Tecnológica, Universidad Autónoma de Zacatecas, rsandoval@uaz.edu.mx.
